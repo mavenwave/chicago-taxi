@@ -151,12 +151,12 @@ if __name__ == '__main__':
   parser.add_argument(
       '--train-batch-size',
       type=int,
-      default=500,
+      default=50,
       help='Batch size for training steps')
   parser.add_argument(
       '--eval-batch-size',
       type=int,
-      default=500,
+      default=50,
       help='Batch size for evaluation steps')
   parser.add_argument(
       '--learning-rate',
@@ -196,7 +196,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--num-epochs',
       type=int,
-      default=50,
+      default=10,
       help='Maximum number of epochs on which to train')
   parser.add_argument(
       '--checkpoint-epochs',
