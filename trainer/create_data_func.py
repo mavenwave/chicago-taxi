@@ -5,7 +5,7 @@ import subprocess
 
 def create_data_func(data_part, project_id, bucket_name, dataset_id):
     # create a temporary table with the results and then export to cloud storage
-    client = bigquery.Client()
+    client = bigquery.Client(project=project_id)
 
     results_table = '{}_results'.format(data_part)
 
@@ -21,7 +21,7 @@ def create_data_func(data_part, project_id, bucket_name, dataset_id):
     job_config.destination = table_ref
     sql = """
     SELECT  
-     trip_seconds
+     LOG(trip_seconds) AS log_trip_seconds
     ,ST_DISTANCE(ST_GEOGPOINT(pickup_longitude, pickup_latitude), ST_GEOGPOINT(dropoff_longitude, dropoff_latitude)) AS distance
     ,EXTRACT(HOUR FROM trip_start_timestamp) AS hour_start
     ,EXTRACT(MONTH FROM trip_start_timestamp) AS month_start
@@ -36,7 +36,8 @@ def create_data_func(data_part, project_id, bucket_name, dataset_id):
     ,dropoff_longitude
     FROM `bigquery-public-data.chicago_taxi_trips.taxi_trips` 
     WHERE ST_DISTANCE(ST_GEOGPOINT(pickup_longitude, pickup_latitude), ST_GEOGPOINT(dropoff_longitude, dropoff_latitude)) > 0
-    AND trip_seconds IS NOT NULL
+    AND trip_seconds <= 60*60*2
+    AND trip_seconds >= 60
     """
     
     if data_part == 'train':

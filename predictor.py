@@ -34,11 +34,10 @@ class MyPredictor(object):
         #preprocessed_inputs = self._preprocessor.preprocess(inputs)
 
         outputs = self._model.predict(instances[0]['input'])
-        return outputs.tolist()[0]
+        logval = outputs.tolist()[0][0]
+        transformedval = np.exp(logval)
+        return str(transformedval)
 
-        
-        
-        
         
 
     @classmethod

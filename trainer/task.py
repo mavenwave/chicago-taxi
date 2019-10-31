@@ -11,9 +11,6 @@ from keras.models import load_model
 
 from tensorflow.python.lib.io import file_io
 
-import trainer.create_data_func as create_data_func
-
-
 
 # CHUNK_SIZE specifies the number of lines
 # to read in case the file is very large
@@ -28,17 +25,28 @@ DATASET_ID = 'chicago_taxi'
 
 
 def train_and_evaluate(args):
-  
+
   # confirm whether training datasets need to be created
   if args.create_data == True:
+    import trainer.create_data_func as create_data_func
+
     logging.info('Begin creating datasets')
     for data_part in ['train','val','test']:
       create_data_func.create_data_func(data_part, PROJECT_ID, BUCKET_NAME, DATASET_ID)
       
-  logging.info('End creating datasets')
-  
+    logging.info('End creating datasets')
+
   # import after datasets are created as they are referenced immediately when this module is initiated
   import trainer.model as model
+
+  # if new datasets are created, scaler also need to be created
+  if args.create_data == True:
+    import trainer.create_scaler_func as create_scaler_func
+
+    logging.info('Begin fitting scaler')
+    create_scaler_func.create_scaler_func(args.train_files, model.CSV_COLUMNS, model.LABEL_COLUMN, BUCKET_NAME)
+      
+    logging.info('End fitting scalers')
 
   # build the model 
   census_model = model.model_fn(learning_rate=args.learning_rate, num_deep_layers=args.num_deep_layers, first_deep_layer_size=args.first_deep_layer_size, first_wide_layer_size=args.first_wide_layer_size, wide_scale_factor=args.wide_scale_factor)
@@ -75,16 +83,16 @@ def train_and_evaluate(args):
 
 
   census_model.fit_generator(
-      generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE),
+      generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE, project_id=PROJECT_ID, bucket_name=BUCKET_NAME),
       steps_per_epoch=args.train_steps, 
       epochs=args.num_epochs,
       callbacks=callbacks,
-      validation_data=model.generator_input(args.eval_files, chunk_size=CHUNK_SIZE),
+      validation_data=model.generator_input(args.eval_files, chunk_size=CHUNK_SIZE, project_id=PROJECT_ID, bucket_name=BUCKET_NAME),
       validation_steps=args.eval_steps)
 
   # evaluate model on test set
   loss, mae, mse  = census_model.evaluate_generator(
-            model.generator_input(args.test_files, chunk_size=CHUNK_SIZE),
+            model.generator_input(args.test_files, chunk_size=CHUNK_SIZE, project_id=PROJECT_ID, bucket_name=BUCKET_NAME),
             steps=args.test_steps)
   logging.info('\nTest evaluation metrics[{:.2f}, {:.2f}, {:.2f}] {}'.format(loss, mae, mse, census_model.metrics_names))
 
@@ -98,6 +106,7 @@ def train_and_evaluate(args):
 
   # Convert the Keras model to TensorFlow SavedModel.
   model.to_savedmodel(census_model, os.path.join(args.job_dir, 'export'))
+  
 
 # h5py workaround: copy local models over to GCS if the job_dir is GCS.
 def copy_file_to_gcs(job_dir, file_path):
@@ -105,7 +114,6 @@ def copy_file_to_gcs(job_dir, file_path):
     with file_io.FileIO(
         os.path.join(job_dir, file_path), mode='w+') as output_f:
       output_f.write(input_f.read())
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

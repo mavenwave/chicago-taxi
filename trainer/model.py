@@ -7,8 +7,11 @@ from keras import layers
 from keras import models
 from keras.backend import relu
 
+from google.cloud import storage
+import joblib
 import logging
 import numpy as np
+from os import path
 import pandas as pd
 import pandas_gbq
 import tensorflow as tf
@@ -19,9 +22,9 @@ from tensorflow.python.saved_model import tag_constants
 from tensorflow.python.saved_model.signature_def_utils_impl import predict_signature_def
 
 # CSV columns in the input file.
-CSV_COLUMNS = ('trip_seconds','distance','hour_start','month_start','weekday','pickup_census_tract','dropoff_census_tract','pickup_community_area','dropoff_community_area','pickup_latitude','pickup_longitude','dropoff_latitude','dropoff_longitude')
+CSV_COLUMNS = ('log_trip_seconds','distance','hour_start','month_start','weekday','pickup_census_tract','dropoff_census_tract','pickup_community_area','dropoff_community_area','pickup_latitude','pickup_longitude','dropoff_latitude','dropoff_longitude')
 
-LABEL_COLUMN = 'trip_seconds'
+LABEL_COLUMN = 'log_trip_seconds'
 
 CAT_COLUMNS = ['weekday','pickup_census_tract','dropoff_census_tract','pickup_community_area','dropoff_community_area']
 
@@ -219,10 +222,9 @@ def to_numeric_features(features):
   
 
 
-def generator_input(filenames, chunk_size, batch_size=64):
+def generator_input(filenames, chunk_size, project_id, bucket_name, batch_size=64):
   """Produce features and labels needed by keras fit_generator."""
 
-  feature_cols = None
   while True:
     input_reader = pd.read_csv(
         tf.io.gfile.GFile(filenames[0]),
@@ -232,14 +234,28 @@ def generator_input(filenames, chunk_size, batch_size=64):
 
     for input_data in input_reader:
       # clean up any rows that contain column headers (in case they were inserted during the sharding and recombining)
-      input_data['trip_seconds_num'] = input_data['trip_seconds'].apply(lambda x: x!='trip_seconds')
+      input_data['log_trip_seconds_num'] = input_data['log_trip_seconds'].apply(lambda x: x!='log_trip_seconds')
 
-      input_data = input_data[input_data['trip_seconds_num'] == True]
-      input_data = input_data.drop(['trip_seconds_num'],axis=1)
+      input_data = input_data[input_data['log_trip_seconds_num'] == True]
+      input_data = input_data.drop(['log_trip_seconds_num'],axis=1)
 
       # separate label from feature columns
-      label = input_data.pop(LABEL_COLUMN)
+      label = input_data.pop(LABEL_COLUMN).astype(float)
       features, weekday_cat, pickup_census_tract_cat, dropoff_census_tract_cat, pickup_community_area_cat, dropoff_community_area_cat = to_numeric_features(input_data)
+
+      # check for the scaler locally
+      if not path.exists('x_scaler'):
+        logging.info('Downloading scaler')
+        storage_client = storage.Client(project=project_id)
+        bucket = storage_client.get_bucket(bucket_name)
+        blob = bucket.blob('scalers/x_scaler')
+        blob.download_to_filename('x_scaler')
+        logging.info('Downloaded scaler')
+
+      # complete the scaling
+      x_scaler = joblib.load('x_scaler')
+      features_scaled = x_scaler.transform(features)
+      features = pd.DataFrame(features_scaled, columns=list(features.columns))
 
       # generate output in batches of length batch_size
       idx_len = input_data.shape[0]
