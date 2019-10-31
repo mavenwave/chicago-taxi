@@ -19,7 +19,7 @@ chicago-taxi
 ```
 **AI Platform.ipynb** 
 <br>
-All of the gcloud commands necessary to tune, train, and host the neural network on AI Platform.
+All of the commands necessary to tune, train, and host the neural network on AI Platform.
 
 **hptuning_config.yaml**
 <br>
