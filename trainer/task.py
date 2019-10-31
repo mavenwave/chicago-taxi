@@ -204,7 +204,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--num-epochs',
       type=int,
-      default=10,
+      default=50,
       help='Maximum number of epochs on which to train')
   parser.add_argument(
       '--checkpoint-epochs',
