@@ -42,6 +42,17 @@ def train_and_evaluate(args):
       
     logging.info('End fitting scalers')
 
+  # download the scaler
+  if not path.exists('x_scaler'):
+    logging.info('Downloading scaler')
+    storage_client = storage.Client(project=project_id)
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob('scalers/x_scaler')
+    blob.download_to_filename('x_scaler')
+    logging.info('Downloaded scaler')
+
+  x_scaler = joblib.load('x_scaler')
+
   # build the model 
   census_model = model.model_fn(learning_rate=args.learning_rate, num_deep_layers=args.num_deep_layers, first_deep_layer_size=args.first_deep_layer_size, first_wide_layer_size=args.first_wide_layer_size, wide_scale_factor=args.wide_scale_factor, dropout_rate=args.dropout_rate)
   logging.info(census_model.summary())
@@ -77,16 +88,16 @@ def train_and_evaluate(args):
 
 
   census_model.fit_generator(
-      generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name),
+      generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name, x_scaler=x_scaler),
       steps_per_epoch=args.train_steps, 
       epochs=args.num_epochs,
       callbacks=callbacks,
-      validation_data=model.generator_input(args.eval_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name),
+      validation_data=model.generator_input(args.eval_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name, x_scaler=x_scaler),
       validation_steps=args.eval_steps)
 
   # evaluate model on test set
   loss, mae, mse  = census_model.evaluate_generator(
-            model.generator_input(args.test_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name),
+            model.generator_input(args.test_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name, x_scaler=x_scaler),
             steps=args.test_steps)
   logging.info('\nTest evaluation metrics[{:.2f}, {:.2f}, {:.2f}] {}'.format(loss, mae, mse, census_model.metrics_names))
 
