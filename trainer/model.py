@@ -14,6 +14,7 @@ import numpy as np
 from os import path
 import pandas as pd
 import pandas_gbq
+import pickle
 import tensorflow as tf
 
 from tensorflow.python.saved_model import builder as saved_model_builder
@@ -89,33 +90,22 @@ def model_fn(learning_rate,
 
     # adjust architecture of the wide model based on input features
   i = 1
-  num_nodes = max(2, int(first_wide_layer_size * wide_scale_factor**i))
+  num_nodes = max(num_continuous_features, int(first_wide_layer_size * wide_scale_factor**i))
   output = layers.Dense(num_nodes, activation='relu')(merged_layer)
-  while num_nodes > 2:
+  while num_nodes > num_continuous_features:
     i+=1
-    num_nodes = max(2, int(first_wide_layer_size * wide_scale_factor**i))
+    num_nodes = max(num_continuous_features, int(first_wide_layer_size * wide_scale_factor**i))
     output = layers.Dense(num_nodes, activation='relu')(output)
 
-  predictions = layers.Dense(1, activation='linear')(output)
-
-  wide_model = models.Model(inputs=[weekday_inputs, pickup_census_tract_inputs, dropoff_census_tract_inputs, pickup_community_area_inputs, dropoff_community_area_inputs], outputs=predictions)
+  wide_model = models.Model(inputs=[weekday_inputs, pickup_census_tract_inputs, dropoff_census_tract_inputs, pickup_community_area_inputs, dropoff_community_area_inputs], outputs=output)
   wide_model = compile_model(wide_model, learning_rate)
-  logging.info(wide_model.summary())
+  #logging.info(wide_model.summary())
 
 
   # define the deep model
   deep_inputs = layers.Input(shape=(num_continuous_features,)) # 7 continous features in current model
-    # adjust architecture of the deep model based on input features
-  for i in range(1, num_deep_layers + 1):
-    num_nodes = max(2, int(first_deep_layer_size / (i)))
-    if i == 1:
-      output = layers.Dense(num_nodes, activation='relu')(deep_inputs)
-    else:
-      output = layers.Dense(num_nodes, activation='relu')(output)
-
-  predictions = layers.Dense(1, activation='linear')(output)
-
-  deep_model = models.Model(inputs=deep_inputs, outputs=predictions)  
+  #output = layers.Dense(num_continuous_features, activation='relu')(deep_inputs)
+  deep_model = models.Model(inputs=deep_inputs, outputs=deep_inputs) 
   deep_model = compile_model(deep_model, learning_rate)
   #logging.info(deep_model.summary())
 
@@ -123,8 +113,16 @@ def model_fn(learning_rate,
   # combine the two models
   # Combine wide and deep into one model
   merged_out = layers.concatenate([wide_model.output, deep_model.output])
-  merged_out = layers.Dense(1)(merged_out)
-  combined_model = models.Model([deep_model.input] + wide_model.input, merged_out)
+    # adjust architecture of the deep model based on input features
+  for i in range(1, num_deep_layers + 1):
+    num_nodes = max(2, int(first_deep_layer_size / (i)))
+    if i == 1:
+      output = layers.Dense(num_nodes, activation='relu')(merged_out)
+    else:
+      output = layers.Dense(num_nodes, activation='relu')(output)
+
+  predictions = layers.Dense(1, activation='linear')(output)
+  combined_model = models.Model([deep_model.input] + wide_model.input, predictions)
 
   combined_model = compile_model(combined_model, learning_rate)
   logging.info(combined_model.summary())
@@ -254,6 +252,7 @@ def generator_input(filenames, chunk_size, project_id, bucket_name, batch_size=6
 
       # complete the scaling
       x_scaler = joblib.load('x_scaler')
+      #x_scaler = pickle.loads('x_scaler')
       features_scaled = x_scaler.transform(features)
       features = pd.DataFrame(features_scaled, columns=list(features.columns))
 
