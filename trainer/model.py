@@ -11,7 +11,6 @@ from google.cloud import storage
 import joblib
 import logging
 import numpy as np
-from os import path
 import pandas as pd
 import pandas_gbq
 import pickle

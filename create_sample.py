@@ -1,6 +1,7 @@
 import json
 import sys
 import numpy as np
+from os import path
 
 from trainer import model
 

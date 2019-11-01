@@ -2,6 +2,7 @@ import argparse
 import glob
 import logging
 import os
+from os import path
 
 #from keras.callbacks import Callback
 from keras.callbacks import ModelCheckpoint
