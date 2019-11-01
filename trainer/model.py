@@ -225,7 +225,7 @@ def to_numeric_features(features):
   
 
 
-def generator_input(filenames, chunk_size, project_id, bucket_name, batch_size=64):
+def generator_input(filenames, chunk_size, project_id, bucket_name, x_scaler, batch_size=64):
   """Produce features and labels needed by keras fit_generator."""
 
   while True:
@@ -246,18 +246,6 @@ def generator_input(filenames, chunk_size, project_id, bucket_name, batch_size=6
       label = input_data.pop(LABEL_COLUMN).astype(float)
       features, weekday_cat, pickup_census_tract_cat, dropoff_census_tract_cat, pickup_community_area_cat, dropoff_community_area_cat = to_numeric_features(input_data)
 
-      # check for the scaler locally
-      if not path.exists('x_scaler'):
-        logging.info('Downloading scaler')
-        storage_client = storage.Client(project=project_id)
-        bucket = storage_client.get_bucket(bucket_name)
-        blob = bucket.blob('scalers/x_scaler')
-        blob.download_to_filename('x_scaler')
-        logging.info('Downloaded scaler')
-
-      # complete the scaling
-      x_scaler = joblib.load('x_scaler')
-      #x_scaler = pickle.loads('x_scaler')
       features_scaled = x_scaler.transform(features)
       features = pd.DataFrame(features_scaled, columns=list(features.columns))
 
