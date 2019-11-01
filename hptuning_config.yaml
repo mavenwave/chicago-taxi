@@ -25,17 +25,25 @@ trainingInput:
     - parameterName: first-deep-layer-size
       type: DISCRETE
       discreteValues:
-          - 10
-          - 15
           - 20
-          - 25
+          - 30
+          - 40
+          - 50
     - parameterName: first-wide-layer-size
       type: INTEGER
-      minValue: 500
-      maxValue: 2500
+      minValue: 700
+      maxValue: 5000
       scaleType: UNIT_LINEAR_SCALE
     - parameterName: wide-scale-factor
       type: DOUBLE
       minValue: 0.01
       maxValue: 0.5
       scaleType: UNIT_LOG_SCALE
+    - parameterName: dropout-rate
+      type: DISCRETE
+      discreteValues:
+          - 0.1
+          - 0.2
+          - 0.3
+          - 0.4
+          - 0.5

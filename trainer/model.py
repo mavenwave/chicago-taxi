@@ -50,7 +50,8 @@ def model_fn(learning_rate,
              num_deep_layers,
              first_deep_layer_size,
              first_wide_layer_size,
-             wide_scale_factor):
+             wide_scale_factor,
+             dropout_rate):
   """Create a Keras Wide and Deep model with layers and the Functional API.
 
   Args:
@@ -87,15 +88,18 @@ def model_fn(learning_rate,
 
   merged_layer = layers.concatenate([weekday_inputs, pickup_census_tract_inputs, dropoff_census_tract_inputs, pickup_community_area_inputs, dropoff_community_area_inputs])
   merged_layer = layers.Dense(first_wide_layer_size, activation='relu')(merged_layer)
+  merged_layer = layers.Dropout(dropout_rate)(merged_layer)
 
     # adjust architecture of the wide model based on input features
   i = 1
   num_nodes = max(num_continuous_features, int(first_wide_layer_size * wide_scale_factor**i))
   output = layers.Dense(num_nodes, activation='relu')(merged_layer)
+  output = layers.Dropout(dropout_rate)(output)
   while num_nodes > num_continuous_features:
     i+=1
     num_nodes = max(num_continuous_features, int(first_wide_layer_size * wide_scale_factor**i))
     output = layers.Dense(num_nodes, activation='relu')(output)
+    output = layers.Dropout(dropout_rate)(output)
 
   wide_model = models.Model(inputs=[weekday_inputs, pickup_census_tract_inputs, dropoff_census_tract_inputs, pickup_community_area_inputs, dropoff_community_area_inputs], outputs=output)
   wide_model = compile_model(wide_model, learning_rate)
@@ -120,6 +124,7 @@ def model_fn(learning_rate,
       output = layers.Dense(num_nodes, activation='relu')(merged_out)
     else:
       output = layers.Dense(num_nodes, activation='relu')(output)
+    output = layers.Dropout(dropout_rate)(output)
 
   predictions = layers.Dense(1, activation='linear')(output)
   combined_model = models.Model([deep_model.input] + wide_model.input, predictions)

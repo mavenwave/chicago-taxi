@@ -18,12 +18,6 @@ CHUNK_SIZE = 5000
 CHECKPOINT_FILE_PATH = 'checkpoint.{epoch:02d}.hdf5'
 CENSUS_MODEL = 'census.hdf5'
 
-# used for creating the datasets
-PROJECT_ID = 'mwpmltr'
-BUCKET_NAME = 'ross-keras'
-DATASET_ID = 'chicago_taxi'
-
-
 def train_and_evaluate(args):
 
   # confirm whether training datasets need to be created
@@ -32,7 +26,7 @@ def train_and_evaluate(args):
 
     logging.info('Begin creating datasets')
     for data_part in ['train','val','test']:
-      create_data_func.create_data_func(data_part, PROJECT_ID, BUCKET_NAME, DATASET_ID)
+      create_data_func.create_data_func(data_part, args.project_id, args.bucket_name, args.dataset_id)
       
     logging.info('End creating datasets')
 
@@ -44,12 +38,12 @@ def train_and_evaluate(args):
     import trainer.create_scaler_func as create_scaler_func
 
     logging.info('Begin fitting scaler')
-    create_scaler_func.create_scaler_func(args.train_files, model.CSV_COLUMNS, model.LABEL_COLUMN, BUCKET_NAME)
+    create_scaler_func.create_scaler_func(args.train_files, model.CSV_COLUMNS, model.LABEL_COLUMN, args.bucket_name, args.project_id)
       
     logging.info('End fitting scalers')
 
   # build the model 
-  census_model = model.model_fn(learning_rate=args.learning_rate, num_deep_layers=args.num_deep_layers, first_deep_layer_size=args.first_deep_layer_size, first_wide_layer_size=args.first_wide_layer_size, wide_scale_factor=args.wide_scale_factor)
+  census_model = model.model_fn(learning_rate=args.learning_rate, num_deep_layers=args.num_deep_layers, first_deep_layer_size=args.first_deep_layer_size, first_wide_layer_size=args.first_wide_layer_size, wide_scale_factor=args.wide_scale_factor, dropout_rate=args.dropout_rate)
   logging.info(census_model.summary())
 
   try:
@@ -83,16 +77,16 @@ def train_and_evaluate(args):
 
 
   census_model.fit_generator(
-      generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE, project_id=PROJECT_ID, bucket_name=BUCKET_NAME),
+      generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name),
       steps_per_epoch=args.train_steps, 
       epochs=args.num_epochs,
       callbacks=callbacks,
-      validation_data=model.generator_input(args.eval_files, chunk_size=CHUNK_SIZE, project_id=PROJECT_ID, bucket_name=BUCKET_NAME),
+      validation_data=model.generator_input(args.eval_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name),
       validation_steps=args.eval_steps)
 
   # evaluate model on test set
   loss, mae, mse  = census_model.evaluate_generator(
-            model.generator_input(args.test_files, chunk_size=CHUNK_SIZE, project_id=PROJECT_ID, bucket_name=BUCKET_NAME),
+            model.generator_input(args.test_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name),
             steps=args.test_steps)
   logging.info('\nTest evaluation metrics[{:.2f}, {:.2f}, {:.2f}] {}'.format(loss, mae, mse, census_model.metrics_names))
 
@@ -106,7 +100,7 @@ def train_and_evaluate(args):
 
   # Convert the Keras model to TensorFlow SavedModel.
   model.to_savedmodel(census_model, os.path.join(args.job_dir, 'export'))
-  
+
 
 # h5py workaround: copy local models over to GCS if the job_dir is GCS.
 def copy_file_to_gcs(job_dir, file_path):
@@ -216,6 +210,27 @@ if __name__ == '__main__':
     type=bool,
     default=False,
     help='Whether or not to create data for train, test, and validation')
+  parser.add_argument(
+    '--dropout-rate',
+    type=float,
+    default=.2,
+    help='Whether or not to create data for train, test, and validation')
+  parser.add_argument(
+    '--project-id',
+    type=str,
+    default='mwpmltr',
+    help='The GCP Project ID')
+  parser.add_argument(
+    '--bucket-name',
+    type=str,
+    default='ross-keras',
+    help='The Cloud Storage bucket to be used for process artifacts')
+  parser.add_argument(
+    '--dataset-id',
+    type=str,
+    default='chicago_taxi',
+    help='The Dataset ID to be used in BigQuery for storing preprocessed data.')
+
 
   args, _ = parser.parse_known_args()
   train_and_evaluate(args)

@@ -6,16 +6,17 @@ A wide and deep neural net implemented using the Keras Functional API to predict
 chicago-taxi
 │   README.md
 │   AI Platform.ipynb
-|   hptuning_config.yaml
-|   create_sample.py
-|   requirements.txt
-|   setup.py    
+│   hptuning_config.yaml
+│   create_sample.py
+│   requirements.txt
+│   setup.py    
 │
 └───trainer
 │   │   __init__.py
 │   │   create_data_func.py
 │   │   model.py
-|   |   task.py
+│   │   task.py
+│   │   create_scaler_func.py
 ```
 **AI Platform.ipynb** 
 <br>
@@ -40,6 +41,10 @@ Specifies additional packages that are required for a training job submission to
 **trainer/create_data_func.py**
 <br>
 Logic required to complete preprocessing and generate training, validation, and test datasets.  This step is callable as an attribute in trainer/task.py.
+
+**trainer/create_scaler_func.py**
+<br>
+Logic required to train a MinMax scaler on the continuous features in the training set.  Similar to trainer/create_data_func.py, this step is callable as an attribute in trainer/task.py and needs to be completed only once for data preparation.
 
 **trainer/model.py**
 <br>

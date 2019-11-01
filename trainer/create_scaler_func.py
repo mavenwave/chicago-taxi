@@ -8,7 +8,7 @@ import tensorflow as tf
 
 import trainer.model as model
 
-def create_scaler_func(filenames, CSV_COLUMNS, LABEL_COLUMN, BUCKET_NAME):
+def create_scaler_func(filenames, CSV_COLUMNS, LABEL_COLUMN, BUCKET_NAME, project_id):
     """Fit MinMaxScaler objects on the dependent and independent variables in the training set
 
     Args:
@@ -46,7 +46,7 @@ def create_scaler_func(filenames, CSV_COLUMNS, LABEL_COLUMN, BUCKET_NAME):
     # save fitted scalers to Cloud Storage
     joblib.dump(x_scaler, 'x_scaler')
     
-    storage_client = storage.Client()
+    storage_client = storage.Client(project=project_id)
     bucket = storage_client.get_bucket(BUCKET_NAME)
     
     blob = bucket.blob('scalers/x_scaler')
