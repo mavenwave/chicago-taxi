@@ -1,4 +1,5 @@
 import argparse
+from google.cloud import storage
 import glob
 import logging
 import os
@@ -46,8 +47,8 @@ def train_and_evaluate(args):
   # download the scaler
   if not path.exists('x_scaler'):
     logging.info('Downloading scaler')
-    storage_client = storage.Client(project=project_id)
-    bucket = storage_client.get_bucket(bucket_name)
+    storage_client = storage.Client(project=args.project_id)
+    bucket = storage_client.get_bucket(args.bucket_name)
     blob = bucket.blob('scalers/x_scaler')
     blob.download_to_filename('x_scaler')
     logging.info('Downloaded scaler')

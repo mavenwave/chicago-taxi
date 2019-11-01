@@ -1,3 +1,4 @@
+from google.cloud import storage
 import json
 import sys
 import numpy as np
@@ -18,8 +19,8 @@ if __name__=='__main__':
       # download the scaler
     if not path.exists('x_scaler'):
         logging.info('Downloading scaler')
-        storage_client = storage.Client(project=project_id)
-        bucket = storage_client.get_bucket(bucket_name)
+        storage_client = storage.Client(project='mwpmltr')
+        bucket = storage_client.get_bucket('ross-keras')
         blob = bucket.blob('scalers/x_scaler')
         blob.download_to_filename('x_scaler')
         logging.info('Downloaded scaler')
