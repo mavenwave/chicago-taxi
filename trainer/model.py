@@ -7,7 +7,6 @@ from keras import layers
 from keras import models
 from keras.backend import relu
 
-from google.cloud import storage
 import joblib
 import logging
 import numpy as np
