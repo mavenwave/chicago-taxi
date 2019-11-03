@@ -9,7 +9,10 @@ chicago-taxi
 │   hptuning_config.yaml
 │   create_sample.py
 │   requirements.txt
-│   setup.py    
+│   setup.py 
+│   predictor.py
+│   input_sample.json
+│   x_scaler      
 │
 └───trainer
 │   │   __init__.py
@@ -37,6 +40,18 @@ Packages required in order to complete the Training in local execution mode.
 **setup.py**
 <br>
 Specifies additional packages that are required for a training job submission to AI Platform.
+
+**predictor.py**
+<br>
+Code necessary for implementation of the custom prediction routine.
+
+**input_sample.json**
+<br>
+Sample preprocessed json object to be passed for inference
+
+**x_scaler**
+<br>
+A MinMax scaler object that has been fit over the continuous features in the training set. 
 
 **trainer/create_data_func.py**
 <br>
