@@ -162,7 +162,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--test-steps',
       help='Number of steps to run test for after model training',
-      default=20,
+      default=500,
       type=int)
   parser.add_argument(
       '--train-batch-size',
@@ -172,7 +172,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--eval-batch-size',
       type=int,
-      default=50,
+      default=132,
       help='Batch size for evaluation steps')
   parser.add_argument(
       '--learning-rate',
