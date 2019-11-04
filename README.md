@@ -36,7 +36,7 @@ A script that can be used to generate a sample model for inference.
 
 **calc_mape.py**
 <br>
-A script that can be used to calculate the Mean Absolute Percengate Error of the model for a given sample size.
+A script that can be used to calculate the Mean Absolute Percengate Error of the model for a given sample size of the test set.
 
 **requirements.txt**
 <br>
