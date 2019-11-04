@@ -31,13 +31,13 @@ if __name__=='__main__':
 
     gen = model.generator_input(['gs://ross-keras/data/full_test_results.csv'], chunk_size=5000, project_id=PROJECT_ID, bucket_name=BUCKET_NAME, x_scaler=x_scaler, batch_size=1)
     
+
     for i in range(1, random.randint(1,100)):
         sample = gen.__next__()
 
-        
     input_sample = {}
-
     input_sample['input'] = sample[0]
+    
     
     print('Produced sample with label {} seconds.'.format(str(int(round(np.exp(sample[1]))))))
 

@@ -10,7 +10,6 @@ from os import path
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import TensorBoard
 from keras.callbacks import EarlyStopping
-from keras.models import load_model
 
 from tensorflow.python.lib.io import file_io
 
@@ -89,7 +88,7 @@ def train_and_evaluate(args):
 
   callbacks = [checkpoint, early_stop, tb_log]
 
-
+  # fit the model on the training set
   census_model.fit_generator(
       generator=model.generator_input(args.train_files, chunk_size=CHUNK_SIZE, project_id=args.project_id, bucket_name=args.bucket_name, x_scaler=x_scaler),
       steps_per_epoch=args.train_steps, 
