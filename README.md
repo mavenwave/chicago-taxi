@@ -8,6 +8,7 @@ chicago-taxi
 │   AI Platform.ipynb
 │   hptuning_config.yaml
 │   create_sample.py
+│   calc_mape.py
 │   requirements.txt
 │   setup.py 
 │   predictor.py
@@ -32,6 +33,10 @@ Parameters to be used in hyperparameter tuning.
 **create_sample.py**
 <br>
 A script that can be used to generate a sample model for inference.
+
+**calc_mape.py**
+<br>
+A script that can be used to calculate the Mean Absolute Percengate Error of the model for a given sample size.
 
 **requirements.txt**
 <br>
